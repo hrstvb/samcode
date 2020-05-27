@@ -1,0 +1,85 @@
+A Task-Driven High-Throughput Workflow
+
+
+PREFACE
+
+This project is created as a example of object-oriented 
+programming (OOP) in C++, for which the specific problem 
+serves as a playground.  The leading motive for design 
+choices was to showcase programming concepts and may not
+be optimal for a real-world implementation.
+
+PROBLEM DESCRIPTION
+
+Consider a computational problem that cam be broken into
+smaller tasks in such a way that:
+  (a) They can be arranged in a tree; 
+  (b) Processing starts at the root;
+  (c) "Children" are processed after "parents".
+  
+Additionally we impose the following constraints:
+  (d) In the beginning only the root task exists;
+  (e) Each task creats its own children tasks;
+  (f) Only a limited number of tasks can exist at atime;
+  (g) "Workers" process "work items" in parallel.
+  
+Finally, specific for this implementation:
+  (h) Tasks of same generation have the same number of children;
+  (i) Tasks of same generation live in the same "pool", each task occupying a "slot";
+  (g) There is a pool of a fixed capacity for each generation;
+  (k) The root task gives two children different alphabets;
+  (l) The root task has the empty word;
+  (m) A child inherits its parent's alphabet and word;
+  (n) A child appends a letter from the alphabet to its word;
+  (o) Children of the last generation "save" their word.
+  (p) Later generation pools are much smaller than the total number of tasks in a generation;
+  (q) The number of workers is much smaller than the total number of slots in all pools;
+  (r) A single wor item is creating a child, updating its word and optional save and delete. 
+
+
+FEATURES
+
+This code features the following:
+
+Inheritance;
+Polymorphism;
+Abstract methods;
+Interfaces;
+Adapter pattern;
+Factory construction pattern;
+Prototype construction pattern;
+Singleton pattern;
+Facade pattern;
+Composition pattern;
+Aggregation pattern;
+Call-once guard
+Protected field access (getter/setter);
+Member access specifiers (public/protected/private);
+Friend;
+Const members/variables/methods/parameters
+Const pointer/pointer to const
+Const method
+Static local variables
+Static class members
+
+
+CLASSES OVERVIEW
+
+Itask <- Task <- InitialTask hierarchy is central for the algorithm
+as it encapsulates all the essential computation, incl chldren creation.
+
+PoolArray, which is composed of Pools provides mechanism for 
+pools/slots access and locking.
+
+Worker is responsible for the parllelism.
+
+DispatcherBase interacts with the PoolArray on behalf of the workers
+hiding the comlexity of reserving and releasing work items.
+The specific algorithms searching for work items are left for 
+concrete implementations of the class.
+
+WorkRequest is used by the interface between dispatcher and worker.
+WorkReqInternal is used internally by the dispatcher. 
+
+
+zyxwvutsrqponmlkjihgfedcba
