@@ -30,7 +30,7 @@ public:
 	static void StopWorkers();
 
 	DispatcherBase(PoolsArray *poolsArray);
-	virtual ~DispatcherBase();
+	virtual ~DispatcherBase() = default;
 
 	/*
 	 * For communication with worker(s).
@@ -51,7 +51,6 @@ public:
 protected:
 	PoolsArray *pools;
 
-private:
 	/*
 	 * Initialized with false.
 	 * Call StopWrokers to set to true.

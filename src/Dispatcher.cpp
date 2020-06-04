@@ -1,44 +1,9 @@
+#include <iostream>
 #include "Dispatcher.h"
 
-Dispatcher::Dispatcher(PoolsArray *poolsArray):DispatcherBase(poolsArray)
+Dispatcher::Dispatcher(PoolsArray *poolsArray) :
+		DispatcherBase(poolsArray)
 {
-}
-
-
-/*
- * Acquires an available task and an available empty spot for a child
- * in successive pools. Stores a pointer to the task and the pool and
- * slots indices in the request. Returns true. Blocks the caller.
- *
- * Returns false after a call to StopWorkers.
- */
-bool Dispatcher::acquireWork(WorkRequest *r)
-{
-	WorkReqInternal q(*r);
-	q.child = nullptr;
-
-	// Keep trying as long as workers don't have to stop.
-	while (!MustWorkersStop()) {
-
-		// For a work item a worker needs (a) a parent task and
-		// (b) a slot to put a new child.
-
-		// 1. Try to acquire an available empty spot in any pool.
-		if (!acquireChildSlot(&q))
-			// If unsuccessful, loop again.
-			continue;
-
-		// 2. Try to acquire an available task.
-		//It has to be in the pool preceding the child destination.
-		if (acquireParent(&q))
-			// If successful, return true.
-			return true;
-		else
-			// If unsuccessful, release child's destination slot
-			// before trying again from the beginning of the loop.
-			pools->unlock(q.childPoolIndex, q.childSlotIndex);
-	};
-	return false;
 }
 
 /*
@@ -51,15 +16,20 @@ bool Dispatcher::acquireWork(WorkRequest *r)
  */
 bool Dispatcher::acquireChildSlot(WorkReqInternal *q)
 {
-	for (int i = pools->getSize(); i >= 1; i--) {
-		for (int j = pools->getSize(i); j >= 0; j--) {
-			if (pools->tryLockIfEmpty(i, j)) {
-				q->childPoolIndex = i;
-				q->childSlotIndex = j;
-				return true;
-			}
+	// Look for an empty slot in the next pool for a new child.
+	size_t i = q->parentPoolIndex + 1;
+
+	// Try to lock any slot on in this pool.
+	for (int j = pools->getSize(i) - 1; j >= 0; j--) {
+		if (pools->tryLockIfEmpty(i, j)) {
+			// If successful, save the pool/slot indices and return true.
+			q->childPoolIndex = i;
+			q->childSlotIndex = j;
+			return true;
 		}
 	}
+
+	// If unsuccessful return false.
 	return false;
 }
 
@@ -74,14 +44,66 @@ bool Dispatcher::acquireChildSlot(WorkReqInternal *q)
  */
 bool Dispatcher::acquireParent(WorkReqInternal *q)
 {
-	size_t i = q->parentPoolIndex = q->childPoolIndex - 1;
-	for (int j = pools->getSize(i) - 1; j >= 0; j--) {
-		if (pools->tryLockIfFull(i, j)) {
-			q->parentSlotIndex = j;
-			q->parent = pools->getTask(i, j);
-			return true;
+	for (int i = pools->getSize() - 1; i >= 0; i--) {
+		for (int j = pools->getSize(i) - 1; j >= 0; j--) {
+			if (pools->tryLockIfFull(i, j)) {
+				q->parentPoolIndex = i;
+				q->parentSlotIndex = j;
+				q->parent = pools->getTask(i, j);
+				return true;
+			}
 		}
 	}
+	q->parentPoolIndex = q->parentSlotIndex = -1;
+	q->parent = nullptr;
+	return false;
+}
+
+/*
+ * Acquires an available task and an available empty spot for a child
+ * in successive pools. Stores a pointer to the task and the pool and
+ * slots indices in the request. Returns true. Blocks the caller.
+ *
+ * Returns false after a call to StopWorkers.
+ */
+bool Dispatcher::acquireWork(WorkRequest *r)
+{
+	WorkReqInternal q(*r);
+
+	// Keep trying as long as workers don't have to stop.
+	while (!MustWorkersStop()) {
+		q.clear();
+
+		// For a work item a worker needs (a) a parent task and
+		// (b) a slot to put a new child.
+
+		// 1. Try to acquire an available task in any pool.
+		if (!acquireParent(&q))
+			// If unsuccessful, loop again.
+			continue;
+
+		// If the parent is in the last pool any children
+		// will be processed and deleted immediately.
+		// Return true without looking for an empt slot.
+		if (q.parentPoolIndex + 1 == (int)pools->getSize())
+			return true;
+
+		// If the parent is not going to create a child on the next step,
+		// return true, without looking for an empty slot.
+		if (!q.parent->evolveWillCreateAChild())
+			return true;
+
+		// 2. Try to acquire an available empty slot.
+		// It has to be in the pool following the parent's one.
+		if (acquireChildSlot(&q))
+			// If successful, return true.
+			return true;
+
+		// If unsuccessful, release parent's destination slot
+		// before trying again from the beginning of the loop.
+		pools->unlock(q.parentPoolIndex, q.parentSlotIndex);
+	}
+
 	return false;
 }
 
@@ -93,8 +115,15 @@ bool Dispatcher::acquireParent(WorkReqInternal *q)
 void Dispatcher::releaseWork(WorkRequest *r)
 {
 	WorkReqInternal q(*r);
-	pools->setTask(q.childPoolIndex, q.childSlotIndex, q.child);
-	pools->unlock(q.childPoolIndex, q.childSlotIndex);
-	pools->setTask(q.parentPoolIndex, q.parentSlotIndex, q.parent);
-	pools->unlock(q.parentPoolIndex, q.parentSlotIndex);
+
+	if (q.hasChildSlot()) {
+		pools->setTask(q.childPoolIndex, q.childSlotIndex, q.child);
+		pools->unlock(q.childPoolIndex, q.childSlotIndex);
+	}
+
+	if (q.hasParentSlot()) {
+		if(q.parent == nullptr)
+			pools->setTask(q.parentPoolIndex, q.parentSlotIndex, q.parent);
+		pools->unlock(q.parentPoolIndex, q.parentSlotIndex);
+	}
 }

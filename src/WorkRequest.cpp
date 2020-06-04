@@ -1,9 +1,11 @@
 #include "WorkRequest.h"
 
-size_t WorkRequest::getChildPoolIndex() { return childPoolIndex; }
-size_t WorkRequest::getChildSlotIndex() { return childSlotIndex; }
-size_t WorkRequest::getParentPoolIndex() { return parentPoolIndex; }
-size_t WorkRequest::getParentSlotIndex() { return parentSlotIndex; }
+int WorkRequest::getChildPoolIndex() { return childPoolIndex; }
+int WorkRequest::getChildSlotIndex() { return childSlotIndex; }
+int WorkRequest::getParentPoolIndex() { return parentPoolIndex; }
+int WorkRequest::getParentSlotIndex() { return parentSlotIndex; }
+bool WorkRequest::hasChildSlot() { return (childPoolIndex >= 0) && (childSlotIndex >= 0); }
+bool WorkRequest::hasParentSlot() { return (parentPoolIndex >= 0) && (parentSlotIndex >= 0); }
 
 WorkReqInternal::WorkReqInternal(WorkRequest &r):
 	child(r.child), parent(r.parent),
@@ -11,3 +13,12 @@ WorkReqInternal::WorkReqInternal(WorkRequest &r):
 	parentPoolIndex(r.parentPoolIndex), parentSlotIndex(r.parentSlotIndex)
 {
 }
+
+void WorkReqInternal::clear()
+{
+	child = parent = nullptr;
+	childPoolIndex = childSlotIndex = parentPoolIndex = parentSlotIndex = -1;
+}
+
+bool WorkReqInternal::hasChildSlot() { return (childPoolIndex >= 0) && (childSlotIndex >= 0); }
+bool WorkReqInternal::hasParentSlot() {	return (parentPoolIndex >= 0) && (parentSlotIndex >= 0); }

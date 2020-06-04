@@ -5,7 +5,7 @@ PREFACE
 
 This project is created as a example of object-oriented 
 programming (OOP) in C++, for which the specific problem 
-serves as a playground.  The leading motive for design 
+serves as a playground.  The primary motive of the design 
 choices was to showcase programming concepts and may not
 be optimal for a real-world implementation.
 
@@ -23,7 +23,9 @@ Additionally we impose the following constraints:
   (f) Only a limited number of tasks can exist at atime;
   (g) "Workers" process "work items" in parallel.
   
-Finally, specific for this implementation:
+Finally, the following definitions determine the concrete example.
+They are arbitrary and can be changed to model other problems.
+The intent is to keep the example simple but not trivial.
   (h) Tasks of same generation have the same number of children;
   (i) Tasks of same generation live in the same "pool", each task occupying a "slot";
   (g) There is a pool of a fixed capacity for each generation;
@@ -31,10 +33,10 @@ Finally, specific for this implementation:
   (l) The root task has the empty word;
   (m) A child inherits its parent's alphabet and word;
   (n) A child appends a letter from the alphabet to its word;
-  (o) Children of the last generation "save" their word.
-  (p) Later generation pools are much smaller than the total number of tasks in a generation;
-  (q) The number of workers is much smaller than the total number of slots in all pools;
-  (r) A single wor item is creating a child, updating its word and optional save and delete. 
+  (o) Children of the last generation "save" their word;
+  (p) At most one child is created per work item;
+  (q) Later generation pools are much smaller than the total number of tasks in that generation;
+  (r) The number of workers is much smaller than the total pools capacity.  
 
 
 FEATURES
@@ -54,6 +56,10 @@ Composition pattern;
 Aggregation pattern;
 Call-once guard
 Protected field access (getter/setter);
+Multi-threading;
+Shared resource acquisition (mutex);
+Local scope exclusive lock;
+Exclusive multiple locks acquisition; 
 Member access specifiers (public/protected/private);
 Friend;
 Const members/variables/methods/parameters
@@ -68,10 +74,13 @@ CLASSES OVERVIEW
 Itask <- Task <- InitialTask hierarchy is central for the algorithm
 as it encapsulates all the essential computation, incl chldren creation.
 
-PoolArray, which is composed of Pools provides mechanism for 
+PoolArray, which is composed of Pools, provides mechanism for 
 pools/slots access and locking.
 
-Worker is responsible for the parllelism.
+Worker is responsible for the parllelism. Runs a simple loop
+requesting work and processinig it.  The processing includes
+evolving and deleting tasks.  A new child would be passed to 
+the dispatcher to be stored reserved in slot. 
 
 DispatcherBase interacts with the PoolArray on behalf of the workers
 hiding the comlexity of reserving and releasing work items.
@@ -81,5 +90,7 @@ concrete implementations of the class.
 WorkRequest is used by the interface between dispatcher and worker.
 WorkReqInternal is used internally by the dispatcher. 
 
+ProtectedCounter is an auxilary class allowing 
+thread-safe increments and reads.
 
 zyxwvutsrqponmlkjihgfedcba

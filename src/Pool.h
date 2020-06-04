@@ -26,6 +26,23 @@ public:
 	virtual ~Pool();
 
 	/*
+	 * Retruns the pool capacity.
+	 */
+	size_t getSize();
+
+	/*
+	 * Retruns a pointer to the task in the i-th slot
+	 * or null if the slot is empty
+	 */
+	ITask* getTask(size_t i);
+
+	/*
+	 * Sets the pointer in the i-th slot ignoring the old value.
+	 * Both the old and the new pointers can be either null or not.
+	 */
+	void setTask(size_t i, ITask* task);
+
+	/*
 	 * A non-blocking attempt to lock the i-th slot only if empty.
 	 * Returns true if successful.
 	 * false otherwise, i.e. the slot is already locked or there is a task in it.
@@ -44,26 +61,10 @@ public:
 	 */
 	void unlock(size_t i);
 
-	/*
-	 * Retruns the pool capacity.
-	 */
-	size_t getSize();
-
-	/*
-	 * Retruns a pointer to the task in the i-th slot
-	 * or null if the slot is empty
-	 */
-	ITask* getTask(size_t i);
-
-	/*
-	 * Sets the pointer in the i-th slot ignoring the old value.
-	 * Both the old and the new pointers can be either null or not.
-	 */
-	void setTask(size_t i, ITask* task);
-
 private:
-	vector<mutex> mutexes; // Slot locks.
-	vector<ITask*> tasks;  // Pointers to tasks.
+	Pool() = delete;
+	vector<mutex*> mutexes; // Slot locks.
+	vector<ITask*> tasks;  // Slots with pointers to tasks.
 };
 
 #endif /* POOL_H_ */

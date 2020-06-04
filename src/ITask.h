@@ -12,30 +12,26 @@ using namespace std;
 
 class ITask {
 public:
-	/*
-	 * Returns the number of children left to create.
-	 * Should decrease by one after each call to newChild().
-	 */
-	virtual size_t getChildrenLeft() const = 0;
-
-	/*
-	 * A factory method for creating children tasks.
-	 */
-	virtual ITask* newChild() = 0; // Factory method
-
-	/*
+	/**
 	 * This is the essential computation.
+	 * @return A pointer to a new child or null.
 	 */
-	virtual void evolveState() = 0;
+	virtual ITask* evolveState() = 0;
 
-	/*
-	 * save() the essential result.
+	/**
+	 * @return true if the next call to evolveState will return a child.
+	 *         This is used by the dispatcher when acquiring a work item.
 	 */
-	virtual void save() = 0;
+	virtual bool evolveWillCreateAChild() const = 0;
 
-	virtual ~ITask() = 0;
+	/**
+	 * true if the Task is completed and should be deleted.
+	 */
+	virtual bool isDone() const = 0;
+
+	virtual ~ITask() = default;
 protected:
-	ITask(); // Use public factory methods.
+	ITask() = default; // Use public factory methods.
 };
 
 #endif /* ITASK_H_ */

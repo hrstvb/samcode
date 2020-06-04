@@ -10,6 +10,7 @@
 #include "WorkRequest.h"
 
 class Dispatcher: public DispatcherBase {
+public:
 	Dispatcher(PoolsArray *poolsArray);
 	// Abstract base methods, implemented:
 	virtual bool acquireWork(WorkRequest *r);

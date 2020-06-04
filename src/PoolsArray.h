@@ -27,7 +27,7 @@ public:
 	 * Initializes the number of pools and individual sizes on the first call.
 	 * Subsequent calls have no effect.
 	 */
-	void initOnce(const vector<const size_t> poolSizes);
+	void initOnce(const vector<size_t> &poolSizes);
 
 	/*
 	 * Returns the number of pools in the pool array.
@@ -73,6 +73,7 @@ public:
 	virtual ~PoolsArray();
 
 private:
+	PoolsArray();
 	vector<Pool*> pools;
 };
 
