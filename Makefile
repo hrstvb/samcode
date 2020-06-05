@@ -1,7 +1,20 @@
-OBJS = DispatcherBase.cpp Dispatcher.cpp ExampleTask.cpp InitialExampleTask.cpp ITask.cpp Pool.cpp PoolsArray.cpp ProtectedCounter.cpp samcode.cpp Worker.cpp WorkRequest.cpp
+OBJS = \
+	DispatcherBase.o \
+	Dispatcher.o \
+	ExampleTask.o \
+	InitialExampleTask.o \
+	ITask.o \
+	Pool.o \
+	PoolsArray.o \
+	ProtectedCounter.o \
+	samcode.o \
+	Worker.o \
+	WorkRequest.o
 
-CXX = c++
-CC  = cc
+EXE = samcode
+
+CXX = c++ -c
+CC  = cc -c
 LD  = c++
 
 CFLAGS   = -std=c++11 -O0 -g3 -Wall -fmessage-length=0 -pthread
@@ -11,16 +24,17 @@ LDFLAGS = -pthread
 
 all:	samcode
 
-samcode:	$(OBJS)
+$(EXE):	$(OBJS)
+	@echo "Linking $@ ..."
 	$(LD) $(LDFLAGS) -o $@ $^
 
-%.o:	%.cpp
-	@echo "Compiling $@..."
-	@echo "$(CXX) -c $(CFLAGS) $(CPPFLAGS) -o $@ $<"
-	# $(CXX) -c $(CFLAGS) $(CPPFLAGS) -o $@ $<
+%.o:	src/%.cpp
+	@echo "Compiling $@ ..."
+	$(CXX) $(CFLAGS) $(CPPFLAGS) -o $@ $<
 
-%.o:	%.c
-	# $(CC) -c $(CFLAGS) $(CCFLAGS) -o $@ $<
+%.o:	src/%.c
+	@echo "Compiling $@ ..."
+	$(CC) $(CFLAGS) $(CCFLAGS) -o $@ $<
 
 clean:
-	rm samcode $(OBJS)
+	rm $(EXE) $(OBJS)
